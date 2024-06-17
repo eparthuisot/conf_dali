@@ -1,0 +1,63 @@
+---
+- name: Create Postgres Container
+  docker_container:
+    name: postgres
+    # Warning if version 1x to 16 of postgres or reverse, directory data not compatible => docker volume rm db-data
+    image: postgres:14
+    state: started
+    recreate: yes
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    env:
+      POSTGRES_PASSWORD: "postgres"
+- name: create build directory
+  file:
+    path: /tmp/demo-dockerfile
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+- name: copy Dockerfile
+  copy:
+    src: ./Dockerfile
+    dest: /tmp/demo-dockerfile/Dockerfile
+    owner: root
+    group: root
+    mode: '0644'
+- name: copy requirements file
+  copy:
+    src: requirements.txt
+    dest: /tmp/demo-dockerfile/requirements.txt
+    owner: root
+    group: root
+- name: copy app directory
+  copy:
+    src: app
+    dest: /tmp/demo-dockerfile
+    owner: root
+    group: root
+- name: copy app config.py
+  copy:
+    src: config.py
+    dest: /tmp/demo-dockerfile
+    owner: root
+    group: root
+- name: build container image
+  docker_image:
+    name: explain:demo
+    build:
+      path: /tmp/demo-dockerfile
+    source: build
+- name: Create explain container
+  docker_container:
+    name: explain
+    image: explain:demo
+    state: started
+    recreate: true
+    ports: "5000:5000"
+    env:
+      DB_SERVICE: postgres
+    links:
+      - postgres:postgres

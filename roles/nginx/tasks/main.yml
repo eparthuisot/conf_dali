@@ -9,8 +9,9 @@
 
 - name: Disable NGINX Default Virtual Host
   become: yes
-  command:
-    cmd: unlink /etc/nginx/sites-enabled/default
+  file:
+    path: "/etc/nginx/sites-enabled/default"
+    state: absent
 
 - name: Create NGINX Conf File For Explain
   become: yes
@@ -26,6 +27,7 @@
       block: |
         server {
           listen 80;
+          server_name 51.159.189.172;
 
           location / {
             return         301 https://$server_name$request_uri;
@@ -51,8 +53,10 @@
 
 - name: Link NGINX Explain Reverse Proxy
   become: yes
-  command:
-    cmd: ln -s /etc/nginx/sites-available/explain_proxy.conf /etc/nginx/sites-enabled/explain_proxy.conf
+  file:
+    src: "/etc/nginx/sites-available/explain_proxy.conf"
+    dest: "/etc/nginx/sites-enabled/explain_proxy.conf"
+    state: link
 
 - name: Make Sure NGINX Service Is Running
   become: yes
